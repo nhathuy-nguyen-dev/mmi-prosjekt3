@@ -1,0 +1,138 @@
+Analyse av slider vs tallfelt vs stepper
+Deltakere: 16  |  Betingelser: slider, tallfelt, stepper  |  Hovedforsøk: 960  |  Enhet(er): mobil
+
+Tid = median av hovedforsøk per deltaker og betingelse (ms). Feilrate = andel ikke-eksakte svar.
+Alle tester er tosidige. For retningsbestemte hypoteser: halver p hvis effekten går i forventet retning (eller velg "Measure 1 < Measure 2" i JASP) – bestem dette FØR dataene samles inn.
+
+================ PARVISE SAMMENLIKNINGER (slider vs tallfelt) ================
+
+--- Tid: time_ms_slider vs time_ms_tallfelt (n = 16) ---
+  M(time_ms_slider) = 2811.69 ms (SD 297.46), Mdn = 2864.75
+  M(time_ms_tallfelt) = 1899.91 ms (SD 210.91), Mdn = 1958.50
+  Differanse (time_ms_slider − time_ms_tallfelt): M = 911.78, SD = 194.43
+  Shapiro-Wilk på differansene: W = 0.972, p = 0.869 -> normalfordeling ikke forkastet (paret t-test OK)
+  Paret t-test (tosidig): t(15) = 18.758, p < .001, Cohens d (dz) = 4.690
+  Wilcoxon signed-rank (tosidig): W = 0.0, p < .001, rank-biserial r = 1.000 (n uten nulldifferanser = 16)
+  Anbefalt rapportert test: paret t-test
+
+--- Feilrate: error_rate_slider vs error_rate_tallfelt (n = 16) ---
+  M(error_rate_slider) = 0.28 (SD 0.09), Mdn = 0.28
+  M(error_rate_tallfelt) = 0.02 (SD 0.03), Mdn = 0.00
+  Differanse (error_rate_slider − error_rate_tallfelt): M = 0.26, SD = 0.09
+  Shapiro-Wilk på differansene: W = 0.941, p = 0.357 -> normalfordeling ikke forkastet (paret t-test OK)
+  Paret t-test (tosidig): t(15) = 11.547, p < .001, Cohens d (dz) = 2.887
+  Wilcoxon signed-rank (tosidig): W = 0.0, p < .001, rank-biserial r = 1.000 (n uten nulldifferanser = 16)
+  Anbefalt rapportert test: paret t-test
+
+--- Gjennomsnittlig absolutt avvik: mean_abs_error_slider vs mean_abs_error_tallfelt (n = 16) ---
+  M(mean_abs_error_slider) = 0.41 (SD 0.17), Mdn = 0.38
+  M(mean_abs_error_tallfelt) = 0.02 (SD 0.03), Mdn = 0.00
+  Differanse (mean_abs_error_slider − mean_abs_error_tallfelt): M = 0.39, SD = 0.17
+  Shapiro-Wilk på differansene: W = 0.895, p = 0.067 -> normalfordeling ikke forkastet (paret t-test OK)
+  Paret t-test (tosidig): t(15) = 9.271, p < .001, Cohens d (dz) = 2.318
+  Wilcoxon signed-rank (tosidig): W = 0.0, p < .001, rank-biserial r = 1.000 (n uten nulldifferanser = 16)
+  Anbefalt rapportert test: paret t-test
+
+--- SEQ (1–7): seq_slider vs seq_tallfelt (n = 16) ---
+  M(seq_slider) = 5.44 (SD 0.63), Mdn = 5.50
+  M(seq_tallfelt) = 6.12 (SD 0.89), Mdn = 6.00
+  Differanse (seq_slider − seq_tallfelt): M = -0.69, SD = 0.79
+  Shapiro-Wilk på differansene: W = 0.871, p = 0.028 -> avvik fra normalfordeling (bruk Wilcoxon)
+  Paret t-test (tosidig): t(15) = -3.467, p = 0.003, Cohens d (dz) = -0.867
+  Wilcoxon signed-rank (tosidig): W = 5.0, p = 0.008, rank-biserial r = -0.848 (n uten nulldifferanser = 11)
+  Anbefalt rapportert test: Wilcoxon signed-rank
+
+--- Opplevd presisjon (1–7): presisjon_slider vs presisjon_tallfelt (n = 16) ---
+  M(presisjon_slider) = 4.81 (SD 0.83), Mdn = 5.00
+  M(presisjon_tallfelt) = 5.94 (SD 0.57), Mdn = 6.00
+  Differanse (presisjon_slider − presisjon_tallfelt): M = -1.12, SD = 0.96
+  Shapiro-Wilk på differansene: W = 0.869, p = 0.026 -> avvik fra normalfordeling (bruk Wilcoxon)
+  Paret t-test (tosidig): t(15) = -4.700, p < .001, Cohens d (dz) = -1.175
+  Wilcoxon signed-rank (tosidig): W = 0.0, p = 0.003, rank-biserial r = -1.000 (n uten nulldifferanser = 11)
+  Anbefalt rapportert test: Wilcoxon signed-rank
+
+--- Behagelig (1–7): behagelig_slider vs behagelig_tallfelt (n = 16) ---
+  M(behagelig_slider) = 5.19 (SD 0.83), Mdn = 5.00
+  M(behagelig_tallfelt) = 5.69 (SD 0.70), Mdn = 6.00
+  Differanse (behagelig_slider − behagelig_tallfelt): M = -0.50, SD = 0.97
+  Shapiro-Wilk på differansene: W = 0.878, p = 0.037 -> avvik fra normalfordeling (bruk Wilcoxon)
+  Paret t-test (tosidig): t(15) = -2.070, p = 0.056, Cohens d (dz) = -0.518
+  Wilcoxon signed-rank (tosidig): W = 16.5, p = 0.059, rank-biserial r = -0.577 (n uten nulldifferanser = 12)
+  Anbefalt rapportert test: Wilcoxon signed-rank
+
+================ TRE BETINGELSER: RM-ANOVA / FRIEDMAN ================
+
+--- Tid: slider, tallfelt, stepper (n = 16) ---
+  slider: M = 2811.69 (SD 297.46), Mdn = 2864.75
+  tallfelt: M = 1899.91 (SD 210.91), Mdn = 1958.50
+  stepper: M = 3521.88 (SD 388.40), Mdn = 3621.75
+  Friedman: chi2(2) = 32.000, p < .001, Kendalls W = 1.000
+  RM-ANOVA: F(2, 30) = 394.380, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p < .001 (Holm-justert p < .001)
+  Post hoc Wilcoxon slider vs stepper: p < .001 (Holm-justert p < .001)
+  Post hoc Wilcoxon tallfelt vs stepper: p < .001 (Holm-justert p < .001)
+
+--- Feilrate: slider, tallfelt, stepper (n = 16) ---
+  slider: M = 0.28 (SD 0.09), Mdn = 0.28
+  tallfelt: M = 0.02 (SD 0.03), Mdn = 0.00
+  stepper: M = 0.04 (SD 0.04), Mdn = 0.05
+  Friedman: chi2(2) = 26.881, p < .001, Kendalls W = 0.840
+  RM-ANOVA: F(2, 30) = 83.134, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p < .001 (Holm-justert p = 0.001)
+  Post hoc Wilcoxon slider vs stepper: p < .001 (Holm-justert p = 0.001)
+  Post hoc Wilcoxon tallfelt vs stepper: p = 0.178 (Holm-justert p = 0.178)
+
+--- Gjennomsnittlig absolutt avvik: slider, tallfelt, stepper (n = 16) ---
+  slider: M = 0.41 (SD 0.17), Mdn = 0.38
+  tallfelt: M = 0.02 (SD 0.03), Mdn = 0.00
+  stepper: M = 0.04 (SD 0.04), Mdn = 0.05
+  Friedman: chi2(2) = 26.881, p < .001, Kendalls W = 0.840
+  RM-ANOVA: F(2, 30) = 71.126, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p < .001 (Holm-justert p = 0.001)
+  Post hoc Wilcoxon slider vs stepper: p < .001 (Holm-justert p = 0.001)
+  Post hoc Wilcoxon tallfelt vs stepper: p = 0.178 (Holm-justert p = 0.178)
+
+--- SEQ (1–7): slider, tallfelt, stepper (n = 16) ---
+  slider: M = 5.44 (SD 0.63), Mdn = 5.50
+  tallfelt: M = 6.12 (SD 0.89), Mdn = 6.00
+  stepper: M = 3.69 (SD 0.70), Mdn = 4.00
+  Friedman: chi2(2) = 25.245, p < .001, Kendalls W = 0.789
+  RM-ANOVA: F(2, 30) = 51.254, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p = 0.008 (Holm-justert p = 0.008)
+  Post hoc Wilcoxon slider vs stepper: p < .001 (Holm-justert p = 0.002)
+  Post hoc Wilcoxon tallfelt vs stepper: p < .001 (Holm-justert p = 0.002)
+
+--- Opplevd presisjon (1–7): slider, tallfelt, stepper (n = 16) ---
+  slider: M = 4.81 (SD 0.83), Mdn = 5.00
+  tallfelt: M = 5.94 (SD 0.57), Mdn = 6.00
+  stepper: M = 4.19 (SD 0.54), Mdn = 4.00
+  Friedman: chi2(2) = 21.148, p < .001, Kendalls W = 0.661
+  RM-ANOVA: F(2, 30) = 31.027, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p = 0.003 (Holm-justert p = 0.006)
+  Post hoc Wilcoxon slider vs stepper: p = 0.038 (Holm-justert p = 0.038)
+  Post hoc Wilcoxon tallfelt vs stepper: p < .001 (Holm-justert p < .001)
+
+--- Behagelig (1–7): slider, tallfelt, stepper (n = 16) ---
+  slider: M = 5.19 (SD 0.83), Mdn = 5.00
+  tallfelt: M = 5.69 (SD 0.70), Mdn = 6.00
+  stepper: M = 4.12 (SD 0.50), Mdn = 4.00
+  Friedman: chi2(2) = 17.370, p < .001, Kendalls W = 0.543
+  RM-ANOVA: F(2, 30) = 20.432, p < .001 (ingen sfærisitetskorreksjon her – bruk JASP for Mauchly/Greenhouse-Geisser)
+  Post hoc Wilcoxon slider vs tallfelt: p = 0.059 (Holm-justert p = 0.059)
+  Post hoc Wilcoxon slider vs stepper: p = 0.004 (Holm-justert p = 0.009)
+  Post hoc Wilcoxon tallfelt vs stepper: p < .001 (Holm-justert p = 0.002)
+
+================ REKKEFØLGEEFFEKT ================
+Tid i første vs andre betingelse (uansett grensesnitt): M diff = 36.7 ms, t(15) = 0.121, p = 0.905  (positiv = raskere i andre del -> læring)
+
+================ PREFERANSE ================
+Fordeling: tallfelt: 12, slider: 3, stepper: 1
+Kji-kvadrat goodness-of-fit (alle 4 kategorier, lik forventning): chi2(3) = 22.500, p < .001  OBS: forventet frekvens < 5 – tolk med forsiktighet
+
+================ FITTS-INSPIRERT ANALYSE (forsøksnivå) ================
+Slider: tid = 896 + 347 × log2(D/W + 1) ms, r = 0.740, R² = 0.547, p < .001 (alle forsøk samlet, N = 320; W = 1 verdisteg)
+  Stigning per deltaker: M = 347 ms/bit, t(15) = 17.74, p < .001 (tester om tiden øker med avstand; bedre enn samlet regresjon fordi forsøk ikke er uavhengige)
+  NB: med konstant startverdi 0 er avstand = målverdi, så avstand og posisjon på skalaen er sammenblandet.
+Tallfelt: median tid per antall siffer: 1 siffer: 1724 ms, 2 siffer: 1944 ms (tallfelt forventes uavhengig av avstand)
+
+Merk: Fitts' lov gjelder pekebevegelser; for slider er dette en tilnærming (finjustering til eksakt verdi spiller også inn).

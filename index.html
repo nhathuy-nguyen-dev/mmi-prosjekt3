@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>Slider eller tallfelt – testoppsett</title>
+<script>
+/* ======================================================================
+   KONFIGURASJON – endre her før testing. Samme verdier for ALLE deltakere.
+   ====================================================================== */
+const CONFIG = {
+  DEVICE: 'mobil',          // 'mobil' (standard: berøring + skjermtastatur) eller 'laptop' (mus/styreflate + tastatur)
+  N_PRACTICE: 3,            // øvingsforsøk per betingelse (flagges practice=1)
+  N_MAIN: 20,               // hovedforsøk per betingelse
+  ENABLE_STEPPER: false,    // true = tredje betingelse (stepper med −10/−1/+1/+10). Krever 6 rekkefølger og RM-ANOVA/Friedman
+  SLIDER_START: 0,          // startverdi for slider/stepper: et tall (konstant, anbefalt) eller 'tilfeldig' (seedet per forsøk)
+  NUMBER_AUTOFOCUS: 'auto', // 'auto' = autofokus på laptop, trykk-for-fokus på mobil. true/false overstyrer
+  SHOW_FEEDBACK_MAIN: false,// vis riktig/feil etter hovedforsøk (false anbefales – unngår strategiendring)
+  CONFIRM_GUARD_MS: 250,    // Bekreft ignoreres de første ms etter Start (hindrer dobbelttrykk)
+  // Fast pool med målverdier (heltall 0–100), spredt over hele skalaen, ingen 0/50/100 og ingen 5-gangere.
+  // 4 verdier i hvert femtedels-intervall. Samme pool i alle betingelser, stokkes seedet per deltaker+betingelse.
+  POOL: [3, 8, 14, 17, 22, 27, 33, 38, 41, 46, 53, 58, 62, 67, 73, 79, 84, 88, 92, 97],
+  PRACTICE_POOL: [12, 64, 89],
+  AUTO_DOWNLOAD: true,      // last ned forsøk + spørreskjema som CSV automatisk når økta fullføres
+  STORAGE_KEY: 'mmi3_slider_tallfelt_v1'
+};
+</script>
+<style>
+:root{
+  --bg:#f4f5f7; --fg:#15171a; --muted:#5a6270; --card:#ffffff; --border:#c9ced6;
+  --accent:#1f5fd1; --accent-fg:#ffffff; --ok:#137a3a; --no:#b3261e; --track:#c9ced6;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#121417; --fg:#eceef2; --muted:#a3abb8; --card:#1e2227; --border:#404752;
+    --accent:#7aa5ff; --accent-fg:#0b0d10; --ok:#5fd08a; --no:#ff8a80; --track:#4a515c; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:18px;line-height:1.4;-webkit-text-size-adjust:100%;touch-action:manipulation;overscroll-behavior:none}
+body{min-height:100vh;min-height:100dvh}
+.screen{display:none;max-width:560px;margin:0 auto;padding:16px 18px 40px}
+.screen.active{display:block}
+h1{font-size:1.4rem;margin:.4rem 0 1rem} h2{font-size:1.2rem;margin:.4rem 0 .8rem}
+p{margin:.5rem 0} .muted{color:var(--muted);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin:12px 0}
+label{display:block;margin:.7rem 0 .3rem;font-weight:600}
+input[type=text],select,textarea{width:100%;font-size:18px;padding:12px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--fg)}
+textarea{min-height:90px;font-family:inherit}
+button{font:inherit;font-size:1.1rem;min-height:56px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card);color:var(--fg);padding:10px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+button:disabled{opacity:.45}
+.full{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>button{flex:1}
+.err{color:var(--no);font-weight:600;min-height:1.4em}
+/* ---- Likert/SEQ ---- */
+.scale{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:.3rem 0}
+.scale button{min-height:52px;padding:0;font-weight:700}
+.scale button.sel,.choice button.sel{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.scale-ends{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted)}
+.choice{display:grid;gap:8px} .choice button{text-align:left}
+/* ---- Forsøksskjerm: fast layout, lik i alle betingelser ---- */
+#trial{padding-top:12px; user-select:none;-webkit-user-select:none}
+#trialHead{height:28px;display:flex;justify-content:space-between;color:var(--muted);font-size:.9rem}
+#targetBox{height:88px;display:flex;align-items:center;justify-content:center;font-size:2.1rem;font-weight:800;text-align:center}
+#controlBox{height:150px;position:relative}
+.ctrl{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center}
+.ctrl.show{display:flex}
+.readout{font-size:2rem;font-weight:800;height:48px;font-variant-numeric:tabular-nums}
+/* Slider: stor "tommel", høy treffflate */
+#slider{-webkit-appearance:none;appearance:none;width:100%;height:56px;background:transparent;margin:0;touch-action:none}
+#slider:focus{outline:none}
+#slider::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:var(--track)}
+#slider::-moz-range-track{height:10px;border-radius:5px;background:var(--track)}
+#slider::-webkit-slider-thumb{-webkit-appearance:none;width:44px;height:44px;border-radius:50%;background:var(--accent);
+  border:3px solid var(--card);margin-top:-17px;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+#slider::-moz-range-thumb{width:44px;height:44px;border-radius:50%;background:var(--accent);border:3px solid var(--card)}
+.scaleLbl{width:100%;display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);padding:0 6px}
+#numInput{width:60%;max-width:240px;font-size:40px;text-align:center;font-weight:800;padding:10px;height:76px;
+  border-radius:12px;border:2px solid var(--border);background:var(--card);color:var(--fg)}
+#numInput:focus{outline:3px solid var(--accent);border-color:var(--accent)}
+.stepRow{display:flex;gap:8px;width:100%} .stepRow button{flex:1;min-height:60px;font-size:1.2rem;font-weight:700}
+#actionBtn{width:100%;height:68px;font-size:1.3rem;margin-top:8px}
+#feedback{height:30px;text-align:center;font-weight:700;margin-top:8px}
+.hidden{visibility:hidden}
+#rotateWarn{display:none;position:fixed;inset:0;background:var(--bg);z-index:99;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:1.3rem}
+@media (orientation: landscape) and (max-height: 500px){ body.mobil #rotateWarn{display:flex} }
+pre,code{font-size:.8rem;white-space:pre-wrap;word-break:break-all}
+table{border-collapse:collapse;font-size:.85rem;width:100%} td,th{border:1px solid var(--border);padding:4px 6px;text-align:left}
+</style>
+</head>
+<body>
+<div id="rotateWarn">Snu telefonen til stående (portrett) for å fortsette.</div>
+
+<!-- ============ START (eksperimentator) ============ -->
+<section id="start" class="screen active">
+  <h1 id="title">Slider eller tallfelt</h1>
+  <p class="muted">Eksperimentator fyller ut. Enhet: <b id="devLbl"></b> · <span id="condLbl"></span></p>
+  <div class="card">
+    <label for="pid">Deltaker-ID (f.eks. P01)</label>
+    <input type="text" id="pid" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="P01">
+    <label for="order">Rekkefølge</label>
+    <select id="order"></select>
+    <p class="muted" id="orderHint"></p>
+    <p class="err" id="startErr"></p>
+    <button class="primary full" id="btnStart">Start økt</button>
+  </div>
+  <p class="muted">Ikke skriv navn eller andre personopplysninger. Bruk bare anonym ID.</p>
+  <p class="muted"><a href="#eksperimentator" id="adminLink" style="color:var(--muted)">Eksperimentatorside / eksport</a></p>
+</section>
+
+<!-- ============ INSTRUKSJON per betingelse ============ -->
+<section id="instr" class="screen">
+  <h1 id="instrTitle"></h1>
+  <div class="card" id="instrText"></div>
+  <button class="primary full" id="btnInstr">Start øving</button>
+</section>
+
+<!-- ============ MELLOMSKJERM (øving ferdig) ============ -->
+<section id="info" class="screen">
+  <h1 id="infoTitle"></h1>
+  <div class="card" id="infoText"></div>
+  <button class="primary full" id="btnInfo">Fortsett</button>
+</section>
+
+<!-- ============ FORSØK ============ -->
+<section id="trial" class="screen">
+  <div id="trialHead"><span id="trialPhase"></span><span id="trialCount"></span></div>
+  <div id="targetBox"></div>
+  <div id="controlBox">
+    <div class="ctrl" id="ctrlSlider">
+      <div class="readout" id="sliderVal">0</div>
+      <input type="range" id="slider" min="0" max="100" step="1" value="0" aria-label="Verdi">
+      <div class="scaleLbl"><span>0</span><span>100</span></div>
+    </div>
+    <div class="ctrl" id="ctrlNumber">
+      <input type="text" id="numInput" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off"
+             autocorrect="off" spellcheck="false" enterkeyhint="done" aria-label="Verdi">
+    </div>
+    <div class="ctrl" id="ctrlStepper">
+      <div class="readout" id="stepVal">0</div>
+      <div class="stepRow">
+        <button data-d="-10">−10</button><button data-d="-1">−1</button><button data-d="1">+1</button><button data-d="10">+10</button>
+      </div>
+    </div>
+  </div>
+  <button class="primary" id="actionBtn">Start</button>
+  <div id="feedback"></div>
+</section>
+
+<!-- ============ SPØRSMÅL ETTER BETINGELSE ============ -->
+<section id="qcond" class="screen">
+  <h1 id="qcondTitle"></h1>
+  <div class="card">
+    <label>Alt i alt, hvor vanskelig eller lett var det å stille inn verdiene?</label>
+    <div class="scale" data-q="seq"></div><div class="scale-ends"><span>1 Svært vanskelig</span><span>7 Svært lett</span></div>
+    <label>Jeg klarte å stille inn nøyaktig riktig verdi.</label>
+    <div class="scale" data-q="presisjon"></div><div class="scale-ends"><span>1 Helt uenig</span><span>7 Helt enig</span></div>
+    <label>Det var behagelig å bruke.</label>
+    <div class="scale" data-q="behagelig"></div><div class="scale-ends"><span>1 Helt uenig</span><span>7 Helt enig</span></div>
+  </div>
+  <p class="err" id="qcondErr"></p>
+  <button class="primary full" id="btnQcond">Neste</button>
+</section>
+
+<!-- ============ AVSLUTTENDE SPØRSMÅL ============ -->
+<section id="qfinal" class="screen">
+  <h1>Til slutt noen spørsmål</h1>
+  <div class="card">
+    <label>Hvilken løsning foretrakk du?</label>
+    <div class="choice" data-q="preference" id="prefChoices"></div>
+    <label for="comment">Kommentar (valgfritt, ikke skriv navn)</label>
+    <textarea id="comment" maxlength="500"></textarea>
+  </div>
+  <div class="card">
+    <label>Alder</label>
+    <div class="choice" data-q="age_range">
+      <button data-v="under 20">Under 20</button><button data-v="20-24">20–24</button><button data-v="25-29">25–29</button>
+      <button data-v="30-39">30–39</button><button data-v="40+">40 eller eldre</button><button data-v="vil ikke oppgi">Vil ikke oppgi</button>
+    </div>
+    <label>Kjønn</label>
+    <div class="choice" data-q="gender">
+      <button data-v="kvinne">Kvinne</button><button data-v="mann">Mann</button><button data-v="annet">Annet</button><button data-v="vil ikke oppgi">Vil ikke oppgi</button>
+    </div>
+    <label>Dominant hånd</label>
+    <div class="choice" data-q="hand">
+      <button data-v="hoyre">Høyre</button><button data-v="venstre">Venstre</button><button data-v="begge">Begge like</button><button data-v="vil ikke oppgi">Vil ikke oppgi</button>
+    </div>
+  </div>
+  <p class="err" id="qfinalErr"></p>
+  <button class="primary full" id="btnQfinal">Fullfør</button>
+</section>
+
+<!-- ============ SLUTT ============ -->
+<section id="end" class="screen">
+  <h1>Takk for at du deltok!</h1>
+  <p>Gi telefonen tilbake til eksperimentatoren.</p>
+  <div class="card">
+    <p class="muted">For eksperimentator: CSV-filene lastes ned automatisk, og økta er lagret i nettleseren. Knappene under er reserve.</p>
+    <div class="row"><button id="dlTrials">Last ned forsøk (CSV)</button><button id="dlQuest">Last ned spørreskjema (CSV)</button></div>
+    <div class="row" style="margin-top:8px"><button id="cpTrials">Kopier forsøk</button><button id="cpQuest">Kopier spørreskjema</button></div>
+    <p class="muted" id="endMsg"></p>
+    <textarea id="endText" readonly style="display:none"></textarea>
+  </div>
+  <button class="primary full" id="btnNew">Ny deltaker</button>
+</section>
+
+<!-- ============ SKJULT EKSPERIMENTATORSIDE (#eksperimentator) ============ -->
+<section id="admin" class="screen">
+  <h1>Eksperimentator – alle økter</h1>
+  <div class="card"><div id="adminList"></div></div>
+  <div class="card">
+    <div class="row"><button id="aDlTrials">Last ned alle forsøk</button><button id="aDlQuest">Last ned alle spørreskjema</button></div>
+    <div class="row" style="margin-top:8px"><button id="aCpTrials">Kopier alle forsøk</button><button id="aCpQuest">Kopier alle spørreskjema</button></div>
+    <p class="muted" id="adminMsg"></p>
+    <textarea id="adminText" readonly style="display:none"></textarea>
+  </div>
+  <div class="card"><button id="aClear" class="full">Slett alle lagrede økter (etter eksport!)</button></div>
+  <button class="primary full" id="aBack">Tilbake til start</button>
+</section>
+
+<script>
+'use strict';
+/* ---------------- Betingelser ---------------- */
+const COND_INFO = {
+  slider:  { navn: 'Slider', bestemt: 'slideren',  instr: 'Du skal stille inn tallet som vises øverst ved å dra i <b>slideren</b>. Verdien vises over slideren.' },
+  tallfelt:{ navn: 'Tallfelt', bestemt: 'tallfeltet', instr: 'Du skal stille inn tallet som vises øverst ved å <b>skrive tallet</b> i feltet. ' },
+  stepper: { navn: 'Stepper', bestemt: 'stepperen', instr: 'Du skal stille inn tallet som vises øverst med knappene <b>−10, −1, +1 og +10</b>.' }
+};
+const CONDS = CONFIG.ENABLE_STEPPER ? ['slider','tallfelt','stepper'] : ['slider','tallfelt'];
+// Rekkefølger: 2 betingelser -> A/B. 3 betingelser -> alle 6 permutasjoner (full motbalansering).
+const ORDERS = CONFIG.ENABLE_STEPPER
+  ? { O1:['slider','tallfelt','stepper'], O2:['slider','stepper','tallfelt'], O3:['tallfelt','slider','stepper'],
+      O4:['tallfelt','stepper','slider'], O5:['stepper','slider','tallfelt'], O6:['stepper','tallfelt','slider'] }
+  : { A:['slider','tallfelt'], B:['tallfelt','slider'] };
+const IS_MOBILE = CONFIG.DEVICE === 'mobil';
+const AUTOFOCUS = CONFIG.NUMBER_AUTOFOCUS === 'auto' ? !IS_MOBILE : !!CONFIG.NUMBER_AUTOFOCUS;
+document.body.classList.add(IS_MOBILE ? 'mobil' : 'laptop');
+
+/* ---------------- Hjelpere ---------------- */
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active', s.id===id)); window.scrollTo(0,0); }
+function fnv1a(str){ let h=0x811c9dc5; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193); } return h>>>0; }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function shuffle(arr, rnd){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function nowIso(){ const d=new Date(), p=n=>String(n).padStart(2,'0');
+  const off=-d.getTimezoneOffset(), s=off>=0?'+':'-', oa=Math.abs(off);
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}${s}${p(Math.floor(oa/60))}:${p(oa%60)}`; }
+function csvCell(v){ if(v===null||v===undefined) return ''; const s=String(v); return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+function toCSV(rows, cols){ return [cols.join(',')].concat(rows.map(r=>cols.map(c=>csvCell(r[c])).join(','))).join('\n')+'\n'; }
+function pidNumber(pid){ const m=String(pid).match(/(\d+)/); return m?parseInt(m[1],10):NaN; }
+
+/* ---------------- Lagring ---------------- */
+function loadAll(){ try{ return JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY)||'[]'); }catch(e){ return []; } }
+function saveAll(all){ try{ localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(all)); }catch(e){ console.warn('localStorage feilet', e); } }
+function persist(){ const all=loadAll(); const i=all.findIndex(s=>s.session_id===S.session_id); if(i>=0) all[i]=S; else all.push(S); saveAll(all); }
+
+const TRIAL_COLS = ['participant_id','order','device','condition','condition_pos','trial_no','practice','target','start_value','distance',
+  'n_digits','response','correct','abs_error','time_ms','first_interaction_ms','n_interactions','n_value_changes','n_backspaces',
+  'n_empty_submits','slider_track_px','screen_w','screen_h','dpr','session_id','timestamp'];
+function questCols(){ const c=['participant_id','order','device']; CONDS.forEach(k=>c.push('seq_'+k,'presisjon_'+k,'behagelig_'+k));
+  return c.concat(['preference','comment','age_range','gender','hand','completed','screen_w','screen_h','dpr','user_agent','session_id','timestamp']); }
+
+/* ---------------- Økt-tilstand ---------------- */
+let S = null;      // gjeldende økt
+let T = null;      // gjeldende forsøk
+let plan = [];     // forsøksliste for gjeldende betingelse
+let condIdx = 0, trialIdx = 0;
+
+function devInfo(){ return { screen_w: window.screen.width, screen_h: window.screen.height, dpr: window.devicePixelRatio||1 }; }
+
+function buildPlan(cond){
+  const rnd = mulberry32(fnv1a(S.participant_id+'|'+cond));
+  const rndStart = mulberry32(fnv1a(S.participant_id+'|'+cond+'|start'));
+  let main=[]; while(main.length<CONFIG.N_MAIN) main=main.concat(shuffle(CONFIG.POOL, rnd)); main=main.slice(0,CONFIG.N_MAIN);
+  const prac=[]; for(let i=0;i<CONFIG.N_PRACTICE;i++) prac.push(CONFIG.PRACTICE_POOL[i%CONFIG.PRACTICE_POOL.length]);
+  const mk=(t,p)=>{ let st=null;
+    if(cond!=='tallfelt'){ if(CONFIG.SLIDER_START==='tilfeldig'){ do{ st=Math.floor(rndStart()*101); }while(Math.abs(st-t)<10); } else st=Number(CONFIG.SLIDER_START); }
+    return {target:t, practice:p, start:st}; };
+  return prac.map(t=>mk(t,1)).concat(main.map(t=>mk(t,0)));
+}
+
+/* ---------------- Start-skjerm ---------------- */
+$('devLbl').textContent = IS_MOBILE ? 'mobil (berøring)' : 'laptop (mus/tastatur)';
+$('condLbl').textContent = 'Betingelser: ' + CONDS.map(c=>COND_INFO[c].navn).join(', ') + ` · ${CONFIG.N_PRACTICE} øving + ${CONFIG.N_MAIN} hovedforsøk`;
+Object.keys(ORDERS).forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k+': '+ORDERS[k].map(c=>COND_INFO[c].navn).join(' → '); $('order').appendChild(o); });
+function suggestOrder(){ const n=pidNumber($('pid').value); const keys=Object.keys(ORDERS);
+  if(!isNaN(n)){ const k=keys[(n-1+keys.length*100)%keys.length]; $('order').value=k;
+    $('orderHint').textContent = CONFIG.ENABLE_STEPPER ? `Foreslått: ${k} (ID-nummer ${n} går syklisk gjennom O1–O6).` : `Foreslått: ${k} (oddetall → A, partall → B).`; }
+  else $('orderHint').textContent=''; }
+$('pid').addEventListener('input', suggestOrder);
+$('btnStart').addEventListener('click', ()=>{
+  const pid=$('pid').value.trim().toUpperCase();
+  if(!/^P\d{1,3}$/.test(pid)){ $('startErr').textContent='Bruk formatet P01, P02 …'; return; }
+  const exists=loadAll().some(s=>s.participant_id===pid && s.completed);
+  if(exists && !confirm(`ID ${pid} har allerede en fullført økt lagret. Fortsette likevel?`)) return;
+  $('startErr').textContent='';
+  S = { session_id: pid+'_'+Date.now(), participant_id: pid, order: $('order').value, device: CONFIG.DEVICE,
+        conds: ORDERS[$('order').value], trials: [], quest: {}, completed: 0, started: nowIso(),
+        user_agent: navigator.userAgent, ...devInfo(), config: CONFIG };
+  persist(); condIdx=0; startCondition();
+});
+
+/* ---------------- Betingelse ---------------- */
+function startCondition(){
+  const cond=S.conds[condIdx]; plan=buildPlan(cond); trialIdx=0;
+  $('instrTitle').textContent = `Del ${condIdx+1} av ${S.conds.length}: ${COND_INFO[cond].navn}`;
+  const extra = cond==='tallfelt' ? (AUTOFOCUS ? ' Feltet er klart til å skrive i.' : ' Trykk på feltet for å få opp tastaturet.') : '';
+  $('instrText').innerHTML = `<p>${COND_INFO[cond].instr}${extra}</p><p>Hvert forsøk starter når du trykker <b>Start</b>. Still inn tallet så raskt og nøyaktig du kan, og trykk <b>Bekreft</b>.</p>`+
+    `<p>Først får du ${CONFIG.N_PRACTICE} øvingsforsøk, deretter ${CONFIG.N_MAIN} forsøk som teller.</p>`+
+    (IS_MOBILE ? '<p>Hold telefonen slik eksperimentatoren har vist, og bruk samme hånd hele tiden.</p>' : '');
+  show('instr');
+}
+$('btnInstr').addEventListener('click', ()=>readyTrial());
+$('btnInfo').addEventListener('click', ()=>readyTrial());
+
+function setCtrl(cond){ ['Slider','Number','Stepper'].forEach(n=>$('ctrl'+n).classList.remove('show'));
+  $({slider:'ctrlSlider',tallfelt:'ctrlNumber',stepper:'ctrlStepper'}[cond]).classList.add('show'); }
+
+let phase='idle'; // 'ready' | 'running'
+function readyTrial(){
+  const cond=S.conds[condIdx], p=plan[trialIdx];
+  const nPrac=plan.filter(x=>x.practice).length;
+  $('trialPhase').textContent = (p.practice?'Øving':'Forsøk')+' · '+COND_INFO[cond].navn;
+  $('trialCount').textContent = p.practice ? `${trialIdx+1} av ${nPrac}` : `${trialIdx-nPrac+1} av ${plan.length-nPrac}`;
+  $('targetBox').textContent='Trykk Start når du er klar';
+  $('targetBox').style.fontSize='1.2rem';
+  setCtrl(cond); $('controlBox').classList.add('hidden');
+  $('numInput').blur();
+  $('actionBtn').textContent='Start'; $('feedback').textContent='';
+  phase='ready'; show('trial');
+}
+
+function beginTrial(){
+  const cond=S.conds[condIdx], p=plan[trialIdx];
+  T = { cond, p, t0:0, tFirst:null, nInter:0, nChanges:0, nBack:0, nEmpty:0, started:performance.now() };
+  if(cond==='slider'){ $('slider').value=p.start; $('sliderVal').textContent=p.start; }
+  if(cond==='stepper'){ stepValue=p.start; $('stepVal').textContent=p.start; }
+  if(cond==='tallfelt'){ $('numInput').value=''; }
+  $('targetBox').style.fontSize=''; $('targetBox').textContent=`Still inn: ${p.target} %`;
+  $('controlBox').classList.remove('hidden'); $('actionBtn').textContent='Bekreft';
+  phase='running';
+  if(cond==='tallfelt' && AUTOFOCUS) $('numInput').focus();
+  T.t0 = performance.now(); // tid fra forsøket vises
+}
+function markFirst(){ if(phase==='running' && T && T.tFirst===null) T.tFirst = performance.now()-T.t0; }
+
+$('actionBtn').addEventListener('pointerdown', e=>{ if(phase==='running' && T && T.cond==='tallfelt') e.preventDefault(); }); // behold fokus/tastatur til klikk
+$('actionBtn').addEventListener('click', ()=>{
+  if(phase==='ready'){ beginTrial(); return; }
+  if(phase!=='running') return;
+  if(performance.now()-T.t0 < CONFIG.CONFIRM_GUARD_MS) return;
+  submitTrial();
+});
+
+/* ---- Slider-hendelser ---- */
+const slider=$('slider');
+slider.addEventListener('pointerdown', ()=>{ markFirst(); if(phase==='running') T.nInter++; });
+slider.addEventListener('keydown', e=>{ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].includes(e.key)){ markFirst(); if(phase==='running') T.nInter++; } });
+slider.addEventListener('input', ()=>{ $('sliderVal').textContent=slider.value; if(phase==='running'){ markFirst(); T.nChanges++; } });
+
+/* ---- Tallfelt-hendelser ---- */
+const num=$('numInput');
+num.addEventListener('pointerdown', ()=>markFirst());
+num.addEventListener('beforeinput', e=>{ if(phase!=='running') return; markFirst();
+  if(e.inputType && e.inputType.startsWith('delete')) T.nBack++; else T.nInter++; });
+num.addEventListener('input', ()=>{ const clean=num.value.replace(/\D/g,'').slice(0,3); if(clean!==num.value) num.value=clean; if(phase==='running') T.nChanges++; });
+num.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); } }); // Enter sender IKKE – kun Bekreft (likt i alle betingelser)
+
+/* ---- Stepper-hendelser ---- */
+let stepValue=0;
+document.querySelectorAll('#ctrlStepper button').forEach(b=>b.addEventListener('click', ()=>{
+  if(phase!=='running') return; markFirst(); T.nInter++;
+  const nv=Math.max(0,Math.min(100, stepValue+parseInt(b.dataset.d,10))); if(nv!==stepValue) T.nChanges++;
+  stepValue=nv; $('stepVal').textContent=nv; }));
+
+function currentResponse(cond){
+  if(cond==='slider') return parseInt(slider.value,10);
+  if(cond==='stepper') return stepValue;
+  const v=num.value.trim(); return v==='' ? null : parseInt(v,10);
+}
+
+function submitTrial(){
+  const tEnd=performance.now(); const cond=T.cond, p=T.p;
+  const resp=currentResponse(cond);
+  if(resp===null){ T.nEmpty++; $('feedback').textContent='Skriv inn et tall først'; return; } // tomt felt blokkeres (logges)
+  const nPrac=plan.filter(x=>x.practice).length;
+  const di=devInfo();
+  const row = { participant_id:S.participant_id, order:S.order, device:S.device, condition:cond, condition_pos:condIdx+1,
+    trial_no: p.practice ? trialIdx+1 : trialIdx-nPrac+1, practice:p.practice, target:p.target,
+    start_value: p.start===null?'':p.start, distance: p.start===null?'':Math.abs(p.target-p.start),
+    n_digits:String(p.target).length, response:resp, correct: resp===p.target?1:0, abs_error:Math.abs(resp-p.target),
+    time_ms: Math.round(tEnd-T.t0), first_interaction_ms: T.tFirst===null?'':Math.round(T.tFirst),
+    n_interactions:T.nInter, n_value_changes:T.nChanges, n_backspaces: cond==='tallfelt'?T.nBack:'', n_empty_submits:T.nEmpty,
+    slider_track_px: cond==='slider' ? Math.round(slider.getBoundingClientRect().width) : '', screen_w:di.screen_w, screen_h:di.screen_h, dpr:di.dpr,
+    session_id:S.session_id, timestamp:nowIso() };
+  S.trials.push(row); persist();
+  phase='idle'; num.blur();
+  if(p.practice || CONFIG.SHOW_FEEDBACK_MAIN){
+    $('feedback').innerHTML = row.correct ? '<span style="color:var(--ok)">Riktig</span>' : `<span style="color:var(--no)">Du valgte ${resp} (mål ${p.target})</span>`;
+  } else $('feedback').textContent='Registrert';
+  trialIdx++;
+  setTimeout(nextStep, p.practice ? 900 : 400);
+}
+
+function nextStep(){
+  if(trialIdx>=plan.length){ showQcond(); return; }
+  if(plan[trialIdx-1].practice && !plan[trialIdx].practice){
+    $('infoTitle').textContent='Øvingen er ferdig';
+    $('infoText').innerHTML=`<p>Nå starter de ${CONFIG.N_MAIN} forsøkene som teller. Jobb så raskt og nøyaktig du kan.</p>`;
+    show('info'); return;
+  }
+  readyTrial();
+}
+
+/* ---------------- Spørreskjema ---------------- */
+document.querySelectorAll('.scale').forEach(sc=>{ for(let i=1;i<=7;i++){ const b=document.createElement('button'); b.textContent=i; b.dataset.v=i; sc.appendChild(b);} });
+function bindChoice(container){ container.addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b||!container.contains(b)) return;
+  container.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); container.dataset.val=b.dataset.v; }); }
+document.querySelectorAll('.scale,.choice').forEach(bindChoice);
+function resetChoices(scope){ scope.querySelectorAll('.scale,.choice').forEach(c=>{ delete c.dataset.val; c.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); }); }
+
+function showQcond(){ const cond=S.conds[condIdx]; resetChoices($('qcond')); $('qcondErr').textContent='';
+  $('qcondTitle').textContent=`Om ${COND_INFO[cond].bestemt}`; show('qcond'); }
+$('btnQcond').addEventListener('click', ()=>{
+  const cond=S.conds[condIdx]; const vals={};
+  for(const q of ['seq','presisjon','behagelig']){ const c=$('qcond').querySelector(`.scale[data-q="${q}"]`); if(!c.dataset.val){ $('qcondErr').textContent='Svar på alle spørsmålene.'; return; } vals[q]=parseInt(c.dataset.val,10); }
+  S.quest['seq_'+cond]=vals.seq; S.quest['presisjon_'+cond]=vals.presisjon; S.quest['behagelig_'+cond]=vals.behagelig; persist();
+  condIdx++;
+  if(condIdx<S.conds.length) startCondition(); else showQfinal();
+});
+function showQfinal(){ const pc=$('prefChoices'); pc.innerHTML='';
+  CONDS.forEach(c=>{ const b=document.createElement('button'); b.dataset.v=c; b.textContent=COND_INFO[c].navn; pc.appendChild(b); });
+  const b=document.createElement('button'); b.dataset.v='ingen preferanse'; b.textContent='Ingen preferanse'; pc.appendChild(b);
+  resetChoices($('qfinal')); $('comment').value=''; show('qfinal'); }
+$('btnQfinal').addEventListener('click', ()=>{
+  const g=q=>$('qfinal').querySelector(`.choice[data-q="${q}"]`).dataset.val;
+  if(!g('preference')||!g('age_range')||!g('gender')||!g('hand')){ $('qfinalErr').textContent='Svar på alle spørsmålene (kommentar er valgfri).'; return; }
+  Object.assign(S.quest,{ preference:g('preference'), comment:$('comment').value.trim(), age_range:g('age_range'), gender:g('gender'), hand:g('hand') });
+  S.completed=1; S.finished=nowIso(); persist(); show('end');
+  autoSave();
+});
+
+/* ---------------- Automatisk lagring ved fullført økt ----------------
+   GitHub Pages er en statisk side uten server, så dataene lagres på to måter hver gang:
+   1) i nettleseren (localStorage, se persist()) – kan eksporteres samlet fra #eksperimentator
+   2) som CSV-filer som lastes ned automatisk når deltakeren trykker Fullfør (Nedlastinger / Filer) */
+function autoSave(){
+  if(!CONFIG.AUTO_DOWNLOAD) return;
+  const tag = `${S.participant_id}_${stamp()}`;
+  try{
+    download(`forsok_${tag}.csv`, csvTrials([S]));
+    // Liten pause mellom filene: noen nettlesere blokkerer to nedlastinger i samme øyeblikk
+    setTimeout(()=>download(`sporreskjema_${tag}.csv`, csvQuest([S])), 700);
+    $('endMsg').textContent = `Lagret automatisk: forsok_${tag}.csv og sporreskjema_${tag}.csv (sjekk Nedlastinger). `+
+      'Mangler en fil? Bruk knappene over. Økta er også lagret i nettleseren.';
+  }catch(e){
+    $('endMsg').textContent = 'Automatisk nedlasting feilet – bruk knappene over. Økta er lagret i nettleseren.';
+  }
+}
+
+/* ---------------- Eksport ---------------- */
+function questRow(s){ return Object.assign({ participant_id:s.participant_id, order:s.order, device:s.device, completed:s.completed,
+  screen_w:s.screen_w, screen_h:s.screen_h, dpr:s.dpr, user_agent:s.user_agent, session_id:s.session_id, timestamp:s.finished||s.started }, s.quest); }
+const csvTrials = list => toCSV(list.flatMap(s=>s.trials), TRIAL_COLS);
+const csvQuest  = list => toCSV(list.map(questRow), questCols());
+function download(name, text){ const blob=new Blob([text],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000); }
+async function copyText(text, ta, msg){
+  try{ if(!navigator.clipboard) throw 0;
+    await Promise.race([navigator.clipboard.writeText(text), new Promise((_,rej)=>setTimeout(()=>rej('timeout'),1500))]);
+    msg.textContent='Kopiert til utklippstavlen.'; return; }catch(e){}
+  ta.style.display='block'; ta.value=text; ta.focus(); ta.select();
+  try{ const ok=document.execCommand('copy'); msg.textContent= ok?'Kopiert (reserveløsning).':'Kopiering blokkert – merk teksten i feltet og kopier manuelt.'; }
+  catch(e){ msg.textContent='Kopiering blokkert – merk teksten i feltet og kopier manuelt.'; } }
+$('dlTrials').onclick=()=>download(`forsok_${S.participant_id}.csv`, csvTrials([S]));
+$('dlQuest').onclick =()=>download(`sporreskjema_${S.participant_id}.csv`, csvQuest([S]));
+$('cpTrials').onclick=()=>copyText(csvTrials([S]), $('endText'), $('endMsg'));
+$('cpQuest').onclick =()=>copyText(csvQuest([S]),  $('endText'), $('endMsg'));
+$('btnNew').onclick=()=>{ S=null; $('pid').value=''; $('orderHint').textContent=''; $('endText').style.display='none'; $('endMsg').textContent=''; show('start'); };
+
+function stamp(){ return nowIso().slice(0,16).replace(/[:T]/g,'-'); }
+function renderAdmin(){ const all=loadAll();
+  $('adminList').innerHTML = all.length ? '<table><tr><th>ID</th><th>Rekkef.</th><th>Forsøk</th><th>Fullført</th><th>Start</th></tr>'+
+    all.map(s=>`<tr><td>${s.participant_id}</td><td>${s.order}</td><td>${s.trials.length}</td><td>${s.completed?'ja':'nei'}</td><td>${(s.started||'').slice(0,16)}</td></tr>`).join('')+'</table>'
+    : '<p>Ingen lagrede økter.</p>'; }
+$('aDlTrials').onclick=()=>download(`alle_forsok_${stamp()}.csv`, csvTrials(loadAll()));
+$('aDlQuest').onclick =()=>download(`alle_sporreskjema_${stamp()}.csv`, csvQuest(loadAll()));
+$('aCpTrials').onclick=()=>copyText(csvTrials(loadAll()), $('adminText'), $('adminMsg'));
+$('aCpQuest').onclick =()=>copyText(csvQuest(loadAll()),  $('adminText'), $('adminMsg'));
+$('aClear').onclick=()=>{ if(confirm('Slette ALLE lagrede økter på denne enheten? Har du eksportert først?') && confirm('Er du helt sikker?')){ localStorage.removeItem(CONFIG.STORAGE_KEY); renderAdmin(); } };
+$('aBack').onclick=()=>{ history.replaceState(null,'',location.pathname); show('start'); };
+function route(){ if(location.hash==='#eksperimentator'){ renderAdmin(); show('admin'); } }
+window.addEventListener('hashchange', route); route();
+// Skjult snarvei: trykk 5 ganger på tittelen
+let tapN=0,tapT=0; $('title').addEventListener('click',()=>{ const t=Date.now(); tapN = t-tapT<600 ? tapN+1 : 1; tapT=t; if(tapN>=5){ tapN=0; location.hash='eksperimentator'; } });
+
+/* ---------------- Diverse beskyttelse ---------------- */
+window.addEventListener('beforeunload', e=>{ if(S && !S.completed){ e.preventDefault(); e.returnValue=''; } });
+document.addEventListener('gesturestart', e=>e.preventDefault()); // iOS pinch-zoom
+// Dobbelttrykk-zoom hindres med touch-action:manipulation i CSS (ikke JS, så raske trykk på knapper ikke svelges).
+document.addEventListener('contextmenu', e=>{ if($('trial').classList.contains('active')) e.preventDefault(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+FIKTIVE DATA - IKKE EKTE RESULTATER
+Filene i denne mappa er simulert med lag_fiktive_data.py (16 oppdiktede deltakere) kun for å teste analyse.py.
+De skal ALDRI brukes, siteres eller vises som resultater i rapporten.
+Kjør på nytt:  python lag_fiktive_data.py   (og --stepper for tre betingelser)

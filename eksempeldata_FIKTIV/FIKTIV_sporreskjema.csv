@@ -1,0 +1,17 @@
+participant_id,order,device,seq_slider,presisjon_slider,behagelig_slider,seq_tallfelt,presisjon_tallfelt,behagelig_tallfelt,preference,comment,age_range,gender,hand,completed,screen_w,screen_h,dpr,user_agent,session_id,timestamp
+P01,A,mobil,5,5,6,7,6,5,tallfelt,FIKTIV,20-24,mann,hoyre,1,390,844,3,FIKTIV,P01_FIKTIV,FIKTIV
+P02,B,mobil,5,5,5,5,7,6,tallfelt,FIKTIV,20-24,mann,hoyre,1,390,844,3,FIKTIV,P02_FIKTIV,FIKTIV
+P03,A,mobil,5,6,6,7,5,6,ingen preferanse,FIKTIV,20-24,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P03_FIKTIV,FIKTIV
+P04,B,mobil,6,5,5,7,7,7,tallfelt,FIKTIV,20-24,mann,hoyre,1,390,844,3,FIKTIV,P04_FIKTIV,FIKTIV
+P05,A,mobil,5,5,4,5,5,5,ingen preferanse,FIKTIV,25-29,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P05_FIKTIV,FIKTIV
+P06,B,mobil,4,4,6,6,5,6,tallfelt,FIKTIV,20-24,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P06_FIKTIV,FIKTIV
+P07,A,mobil,5,5,6,7,6,7,tallfelt,FIKTIV,25-29,mann,hoyre,1,390,844,3,FIKTIV,P07_FIKTIV,FIKTIV
+P08,B,mobil,5,5,5,6,6,6,slider,FIKTIV,20-24,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P08_FIKTIV,FIKTIV
+P09,A,mobil,4,6,4,6,6,6,slider,FIKTIV,25-29,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P09_FIKTIV,FIKTIV
+P10,B,mobil,4,6,4,6,5,7,tallfelt,FIKTIV,25-29,vil ikke oppgi,hoyre,1,390,844,3,FIKTIV,P10_FIKTIV,FIKTIV
+P11,A,mobil,5,5,4,6,6,5,ingen preferanse,FIKTIV,25-29,kvinne,venstre,1,390,844,3,FIKTIV,P11_FIKTIV,FIKTIV
+P12,B,mobil,5,6,5,5,6,7,slider,FIKTIV,20-24,vil ikke oppgi,venstre,1,390,844,3,FIKTIV,P12_FIKTIV,FIKTIV
+P13,A,mobil,6,5,6,6,6,6,tallfelt,FIKTIV,25-29,mann,hoyre,1,390,844,3,FIKTIV,P13_FIKTIV,FIKTIV
+P14,B,mobil,4,5,4,5,6,6,tallfelt,FIKTIV,20-24,kvinne,hoyre,1,390,844,3,FIKTIV,P14_FIKTIV,FIKTIV
+P15,A,mobil,5,5,6,6,5,6,ingen preferanse,FIKTIV,25-29,vil ikke oppgi,venstre,1,390,844,3,FIKTIV,P15_FIKTIV,FIKTIV
+P16,B,mobil,5,6,6,5,6,6,slider,FIKTIV,25-29,kvinne,hoyre,1,390,844,3,FIKTIV,P16_FIKTIV,FIKTIV
